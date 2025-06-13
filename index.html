@@ -508,7 +508,7 @@
     </style>
 </head>
 <body>
-    <button class="admin-toggle" onclick="toggleAdmin()">Admin</button>
+
 
     <div class="container">
         <!-- Admin Panel (Hidden by default) -->
@@ -660,10 +660,35 @@
             loadAdminPages();
         }
 
-        // Admin panel toggle
+        // Admin panel toggle with password protection
         function toggleAdmin() {
             const adminPanel = document.getElementById('admin-panel');
-            adminPanel.classList.toggle('active');
+            if (!adminPanel) {
+                console.error('Admin panel not found');
+                return;
+            }
+
+            // If admin panel is already open, just close it
+            if (adminPanel.classList.contains('active')) {
+                adminPanel.classList.remove('active');
+                return;
+            }
+
+            // Check if already authenticated in this session
+            if (sessionStorage.getItem('adminAuthenticated') === 'true') {
+                adminPanel.classList.add('active');
+                return;
+            }
+
+            // Prompt for password
+            const password = prompt('Enter admin password:');
+            if (password === 'maven') {
+                sessionStorage.setItem('adminAuthenticated', 'true');
+                adminPanel.classList.add('active');
+                console.log('Admin access granted');
+            } else if (password !== null) { // User didn't cancel
+                alert('Incorrect password');
+            }
         }
 
         // File upload handling
