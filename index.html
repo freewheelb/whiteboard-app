@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Digital Maven Design Feedback Dashboard</title>
+    <title>Design Feedback Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -29,35 +29,20 @@
             padding: 24px;
             margin-bottom: 24px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .header h1 {
+        .header-content h1 {
             color: #1e293b;
             margin-bottom: 8px;
             font-size: 28px;
         }
 
-        .header p {
+        .header-content p {
             color: #64748b;
             font-size: 16px;
-        }
-
-        .admin-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-
-        .admin-toggle:hover {
-            background: #2563eb;
         }
 
         .admin-panel {
@@ -491,6 +476,12 @@
                 padding: 12px;
             }
 
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
             .pages-grid {
                 grid-template-columns: 1fr;
             }
@@ -508,9 +499,15 @@
     </style>
 </head>
 <body>
-
-
     <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1>Design Feedback Dashboard</h1>
+                <p>Review designs and provide feedback</p>
+            </div>
+            <button class="btn btn-secondary" onclick="toggleAdmin()" style="font-size: 14px;">🔒 Admin</button>
+        </div>
+
         <!-- Admin Panel (Hidden by default) -->
         <div id="admin-panel" class="admin-panel">
             <h2 style="margin-bottom: 24px; color: #3b82f6;">🔒 Admin Panel</h2>
@@ -696,10 +693,12 @@
             const fileUploadArea = document.getElementById('file-upload');
             const fileInput = document.getElementById('image-upload');
 
-            fileUploadArea.addEventListener('click', () => fileInput.click());
-            fileUploadArea.addEventListener('dragover', handleDragOver);
-            fileUploadArea.addEventListener('drop', handleDrop);
-            fileInput.addEventListener('change', handleFileSelect);
+            if (fileUploadArea && fileInput) {
+                fileUploadArea.addEventListener('click', () => fileInput.click());
+                fileUploadArea.addEventListener('dragover', handleDragOver);
+                fileUploadArea.addEventListener('drop', handleDrop);
+                fileInput.addEventListener('change', handleFileSelect);
+            }
         }
 
         function handleDragOver(e) {
@@ -811,6 +810,8 @@
                 const pages = await response.json();
                 const pagesList = document.getElementById('admin-pages-list');
                 
+                if (!pagesList) return;
+                
                 if (pages.length === 0) {
                     pagesList.innerHTML = '<p style="color: #6b7280;">No pages uploaded yet.</p>';
                     return;
@@ -829,7 +830,10 @@
                     </div>
                 `).join('');
             } catch (error) {
-                document.getElementById('admin-pages-list').innerHTML = '<p style="color: #ef4444;">Error loading pages: ' + error.message + '</p>';
+                const pagesList = document.getElementById('admin-pages-list');
+                if (pagesList) {
+                    pagesList.innerHTML = '<p style="color: #ef4444;">Error loading pages: ' + error.message + '</p>';
+                }
             }
         }
 
@@ -862,7 +866,7 @@
             }
         }
 
-        // Client dashboard
+        // Client dashboard - Fix case sensitivity and add debugging  
         async function loadClientDashboard() {
             const clientName = document.getElementById('client-access').value.trim();
             if (!clientName) {
@@ -870,22 +874,29 @@
                 return;
             }
 
+            console.log('Loading dashboard for client:', clientName);
             currentClient = clientName;
 
             try {
+                console.log('Fetching pages from:', `${apiUrl}/pages`);
                 const response = await fetch(`${apiUrl}/pages`);
                 const allPages = await response.json();
+                console.log('All pages received:', allPages);
+                
+                // Case-insensitive filtering
                 const clientPages = allPages.filter(page => 
                     page.client_name.toLowerCase() === clientName.toLowerCase()
                 );
+                console.log('Client pages found:', clientPages);
 
                 if (clientPages.length === 0) {
-                    alert('No pages found for this client');
+                    alert(`No pages found for client "${clientName}". Available clients: ${[...new Set(allPages.map(p => p.client_name))].join(', ')}`);
                     return;
                 }
 
                 // Show dashboard
                 document.getElementById('client-dashboard').style.display = 'block';
+                document.querySelector('.client-selector').style.display = 'none';
                 document.getElementById('client-display-name').textContent = clientName;
                 document.getElementById('client-info').textContent = `${clientPages.length} page(s) available for review`;
 
@@ -902,7 +913,7 @@
 
                 const pagesGrid = document.getElementById('pages-grid');
                 pagesGrid.innerHTML = Object.values(pageGroups).map(page => {
-                    const statusKey = `${page.client_name}-${page.name}`;
+                    const statusKey = `${page.client_name.toLowerCase()}-${page.name.toLowerCase()}`;
                     const status = pageStatuses[statusKey] || 'not-viewed';
                     
                     return `
@@ -923,6 +934,7 @@
                 }).join('');
 
             } catch (error) {
+                console.error('Error loading client dashboard:', error);
                 alert('Error loading client dashboard: ' + error.message);
             }
         }
@@ -969,4 +981,502 @@
                 }
 
                 displayPage(latestPage, pageVersions);
+            } catch (error) {
+                alert('Error loading page: ' + error.message);
             }
+        }
+
+        function displayPage(page, allVersions) {
+            // Hide dashboard, show page viewer
+            document.getElementById('client-dashboard').style.display = 'none';
+            document.getElementById('page-viewer').style.display = 'block';
+            
+            // Set the image
+            document.getElementById('page-image').src = page.image_data;
+            
+            // Populate version selector
+            const versionSelector = document.getElementById('version-selector');
+            versionSelector.innerHTML = allVersions.map(v => 
+                `<option value="${v.id}" ${v.id === page.id ? 'selected' : ''}>${v.version}</option>`
+            ).join('');
+            
+            // Update complete button based on status
+            updateCompleteButton();
+            
+            // Setup canvas for drawing
+            setupCanvas();
+            
+            // Setup image overlay events
+            setupImageOverlayEvents();
+            
+            // Load comments and pins for this page
+            loadComments();
+        }
+
+        function loadVersion() {
+            const selectedPageId = document.getElementById('version-selector').value;
+            if (!selectedPageId || !currentPage) return;
+            
+            const clientName = currentPage.client_name;
+            const pageName = currentPage.name;
+            
+            try {
+                fetch(`${apiUrl}/page/${clientName}/${pageName}`)
+                    .then(response => response.json())
+                    .then(pageVersions => {
+                        const page = pageVersions.find(p => p.id == selectedPageId);
+                        
+                        if (page) {
+                            currentPage = page;
+                            document.getElementById('page-image').src = page.image_data;
+                            loadComments();
+                            clearDrawing();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading version:', error);
+                    });
+            } catch (error) {
+                console.error('Error loading version:', error);
+            }
+        }
+
+        function backToDashboard() {
+            document.getElementById('page-viewer').style.display = 'none';
+            document.getElementById('client-dashboard').style.display = 'block';
+            document.querySelector('.client-selector').style.display = 'none';
+            loadClientDashboard(); // Refresh to show updated status
+        }
+
+        // Status tracking - Fix case sensitivity
+        function markAsViewed(clientName, pageName) {
+            const pageStatuses = JSON.parse(localStorage.getItem('pageStatuses') || '{}');
+            const statusKey = `${clientName.toLowerCase()}-${pageName.toLowerCase()}`;
+            
+            if (!pageStatuses[statusKey] || pageStatuses[statusKey] === 'not-viewed') {
+                pageStatuses[statusKey] = 'viewed';
+                localStorage.setItem('pageStatuses', JSON.stringify(pageStatuses));
+            }
+        }
+
+        function markAsCompleted() {
+            if (!currentPage) return;
+            
+            const pageStatuses = JSON.parse(localStorage.getItem('pageStatuses') || '{}');
+            const statusKey = `${currentPage.client_name.toLowerCase()}-${currentPage.name.toLowerCase()}`;
+            
+            if (pageStatuses[statusKey] === 'completed') {
+                // Toggle back to viewed
+                pageStatuses[statusKey] = 'viewed';
+            } else {
+                // Mark as completed
+                pageStatuses[statusKey] = 'completed';
+            }
+            
+            localStorage.setItem('pageStatuses', JSON.stringify(pageStatuses));
+            updateCompleteButton();
+        }
+
+        function updateCompleteButton() {
+            if (!currentPage) return;
+            
+            const pageStatuses = JSON.parse(localStorage.getItem('pageStatuses') || '{}');
+            const statusKey = `${currentPage.client_name.toLowerCase()}-${currentPage.name.toLowerCase()}`;
+            const status = pageStatuses[statusKey] || 'viewed';
+            
+            const completeBtn = document.getElementById('complete-btn');
+            if (completeBtn) {
+                if (status === 'completed') {
+                    completeBtn.textContent = '↩ Mark as In Progress';
+                    completeBtn.classList.remove('btn-success');
+                    completeBtn.classList.add('btn-secondary');
+                } else {
+                    completeBtn.textContent = '✓ Mark Complete';
+                    completeBtn.classList.remove('btn-secondary');
+                    completeBtn.classList.add('btn-success');
+                }
+            }
+        }
+
+        // Drawing canvas setup
+        function setupDrawingCanvas() {
+            // This will be called when the image loads
+        }
+
+        function setupCanvas() {
+            const canvas = document.getElementById('drawing-canvas');
+            const image = document.getElementById('page-image');
+            
+            if (!canvas || !image) return;
+            
+            function setCanvasDimensions() {
+                canvas.width = image.offsetWidth;
+                canvas.height = image.offsetHeight;
+                drawingContext = canvas.getContext('2d');
+                if (drawingContext) {
+                    drawingContext.strokeStyle = '#ef4444';
+                    drawingContext.lineWidth = 3;
+                    drawingContext.lineCap = 'round';
+                }
+            }
+            
+            // Wait for image to load to get proper dimensions
+            if (image.complete && image.naturalWidth > 0) {
+                setCanvasDimensions();
+            } else {
+                image.onload = setCanvasDimensions;
+            }
+        }
+
+        // Tool selection
+        function selectTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`${tool}-tool`).classList.add('active');
+            
+            const overlay = document.getElementById('image-overlay');
+            const canvas = document.getElementById('drawing-canvas');
+            
+            if (tool === 'pin') {
+                overlay.classList.add('active');
+                canvas.classList.remove('active');
+            } else if (tool === 'draw') {
+                overlay.classList.remove('active');
+                canvas.classList.add('active');
+                setupDrawingEvents();
+            }
+        }
+
+        function setupDrawingEvents() {
+            const canvas = document.getElementById('drawing-canvas');
+            
+            // Remove existing event listeners to prevent duplicates
+            canvas.removeEventListener('mousedown', startDrawing);
+            canvas.removeEventListener('mousemove', draw);
+            canvas.removeEventListener('mouseup', stopDrawing);
+            canvas.removeEventListener('mouseout', stopDrawing);
+            canvas.removeEventListener('touchstart', handleTouch);
+            canvas.removeEventListener('touchmove', handleTouch);
+            canvas.removeEventListener('touchend', stopDrawing);
+            
+            // Add event listeners
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            if (currentTool !== 'draw') return;
+            isDrawing = true;
+            const rect = e.target.getBoundingClientRect();
+            drawingContext.beginPath();
+            drawingContext.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing || currentTool !== 'draw') return;
+            const rect = e.target.getBoundingClientRect();
+            drawingContext.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            drawingContext.stroke();
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                saveDrawing();
+            }
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            if (!e.touches || e.touches.length === 0) return;
+            
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(
+                e.type === 'touchstart' ? 'mousedown' : 
+                e.type === 'touchmove' ? 'mousemove' : 'mouseup', 
+                {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    bubbles: true,
+                    cancelable: true
+                }
+            );
+            e.target.dispatchEvent(mouseEvent);
+        }
+
+        function clearDrawing() {
+            const canvas = document.getElementById('drawing-canvas');
+            if (drawingContext && canvas) {
+                drawingContext.clearRect(0, 0, canvas.width, canvas.height);
+                saveDrawing();
+            }
+        }
+
+        function saveDrawing() {
+            if (!drawingContext || !currentPage) return;
+            
+            const drawingData = drawingContext.canvas.toDataURL();
+            const drawings = JSON.parse(localStorage.getItem('drawings') || '[]');
+            
+            // Remove existing drawing for this page version
+            const filteredDrawings = drawings.filter(d => 
+                !(d.client === currentPage.client_name && d.page === currentPage.name && d.version === currentPage.version)
+            );
+            
+            // Add new drawing if not empty
+            if (drawingData !== 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==') {
+                filteredDrawings.push({
+                    client: currentPage.client_name,
+                    page: currentPage.name,
+                    version: currentPage.version,
+                    drawingData: drawingData,
+                    created: new Date().toISOString()
+                });
+            }
+            
+            localStorage.setItem('drawings', JSON.stringify(filteredDrawings));
+        }
+
+        // Pin and comment handling - Fix event listener setup
+        function setupImageOverlayEvents() {
+            const overlay = document.getElementById('image-overlay');
+            if (overlay) {
+                // Remove any existing listeners to prevent duplicates
+                overlay.removeEventListener('click', handleOverlayClick);
+                overlay.addEventListener('click', handleOverlayClick);
+            }
+        }
+
+        function handleOverlayClick(e) {
+            if (currentTool !== 'pin') return;
+            
+            const overlay = document.getElementById('image-overlay');
+            const rect = overlay.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            
+            // Check if clicking on existing pin
+            const existingPin = e.target.closest('.pin');
+            if (existingPin) {
+                openCommentModal(existingPin.dataset.commentId);
+                return;
+            }
+            
+            // Create new pin
+            openCommentModal(null, x, y);
+        }
+
+        function createPin(x, y, commentId = null) {
+            const pin = document.createElement('div');
+            pin.className = 'pin';
+            pin.style.left = x + '%';
+            pin.style.top = y + '%';
+            pin.dataset.x = x;
+            pin.dataset.y = y;
+            if (commentId) {
+                pin.dataset.commentId = commentId;
+            }
+            
+            document.getElementById('image-overlay').appendChild(pin);
+            return pin;
+        }
+
+        function openCommentModal(commentId = null, x = null, y = null) {
+            currentCommentPin = { commentId, x, y };
+            document.getElementById('comment-modal').classList.add('active');
+            
+            if (commentId) {
+                // Editing existing comment - load the actual comment text
+                const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+                const comment = comments.find(c => c.id === commentId);
+                if (comment) {
+                    document.getElementById('comment-text').value = comment.text;
+                } else {
+                    document.getElementById('comment-text').value = '';
+                }
+                document.getElementById('delete-comment-btn').style.display = 'block';
+            } else {
+                // New comment - hide delete button
+                document.getElementById('comment-text').value = '';
+                document.getElementById('delete-comment-btn').style.display = 'none';
+            }
+        }
+
+        function closeCommentModal() {
+            document.getElementById('comment-modal').classList.remove('active');
+            currentCommentPin = null;
+        }
+
+        function saveComment() {
+            const text = document.getElementById('comment-text').value.trim();
+            
+            if (!text || !currentPage) {
+                alert('Please enter a comment');
+                return;
+            }
+            
+            const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+            
+            if (currentCommentPin.commentId) {
+                // Update existing comment
+                const commentIndex = comments.findIndex(c => c.id === currentCommentPin.commentId);
+                if (commentIndex >= 0) {
+                    comments[commentIndex].text = text;
+                    comments[commentIndex].updated = new Date().toISOString();
+                }
+            } else {
+                // Create new comment - use consistent property names
+                const newComment = {
+                    id: Date.now().toString(),
+                    client: currentPage.client_name,
+                    page: currentPage.name,
+                    version: currentPage.version,
+                    x: currentCommentPin.x,
+                    y: currentCommentPin.y,
+                    text: text,
+                    created: new Date().toISOString()
+                };
+                comments.push(newComment);
+            }
+            
+            localStorage.setItem('comments', JSON.stringify(comments));
+            closeCommentModal();
+            loadComments(); // This will recreate all pins including the new one
+        }
+
+        function deleteComment() {
+            if (!currentCommentPin.commentId) return;
+            
+            if (confirm('Are you sure you want to delete this comment?')) {
+                const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+                const filteredComments = comments.filter(c => c.id !== currentCommentPin.commentId);
+                localStorage.setItem('comments', JSON.stringify(filteredComments));
+                
+                // Remove pin
+                const pin = document.querySelector(`[data-comment-id="${currentCommentPin.commentId}"]`);
+                if (pin) {
+                    pin.remove();
+                }
+                
+                closeCommentModal();
+                loadComments();
+            }
+        }
+
+        function loadComments() {
+            if (!currentPage) return;
+            
+            const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+            // Match comments by client name and page name (more reliable than pageId)
+            const pageComments = comments.filter(c => 
+                c.client === currentPage.client_name && c.page === currentPage.name
+            );
+            
+            // Clear existing pins
+            document.querySelectorAll('.pin').forEach(pin => pin.remove());
+            
+            // Create pins for current version comments
+            const currentVersionComments = pageComments.filter(c => c.version === currentPage.version);
+            currentVersionComments.forEach(comment => {
+                createPin(comment.x, comment.y, comment.id);
+            });
+            
+            // Display all comments in sidebar
+            displayCommentsList(pageComments);
+        }
+
+        function displayCommentsList(comments) {
+            const commentsList = document.getElementById('comments-list');
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<p style="color: #6b7280;">No comments yet. Click anywhere on the design to add feedback!</p>';
+                return;
+            }
+            
+            // Sort comments by creation date
+            comments.sort((a, b) => new Date(b.created) - new Date(a.created));
+            
+            commentsList.innerHTML = comments.map(comment => `
+                <div class="comment">
+                    <div class="comment-meta">
+                        ${comment.version} • ${new Date(comment.created).toLocaleDateString()}
+                        ${comment.updated ? `• Updated: ${new Date(comment.updated).toLocaleDateString()}` : ''}
+                    </div>
+                    <div>${comment.text}</div>
+                    <div class="comment-actions">
+                        <button onclick="jumpToComment('${comment.id}')" style="background: #3b82f6; color: white;">Jump to Pin</button>
+                        <button onclick="openCommentModal('${comment.id}')" style="background: #6b7280; color: white;">Edit</button>
+                        <button onclick="deleteCommentFromList('${comment.id}')" style="background: #ef4444; color: white;">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteCommentFromList(commentId) {
+            if (confirm('Are you sure you want to delete this comment?')) {
+                const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+                const filteredComments = comments.filter(c => c.id !== commentId);
+                localStorage.setItem('comments', JSON.stringify(filteredComments));
+                
+                // Remove pin
+                const pin = document.querySelector(`[data-comment-id="${commentId}"]`);
+                if (pin) {
+                    pin.remove();
+                }
+                
+                loadComments();
+            }
+        }
+
+        function jumpToComment(commentId) {
+            const pin = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (pin) {
+                pin.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                pin.style.animation = 'none';
+                setTimeout(() => {
+                    pin.style.animation = 'pulse 2s infinite';
+                }, 100);
+            }
+        }
+
+        // Window resize handler to maintain canvas size
+        window.addEventListener('resize', function() {
+            if (document.getElementById('page-viewer').style.display !== 'none') {
+                setTimeout(setupCanvas, 100);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            switch(e.key) {
+                case '1':
+                    if (document.getElementById('page-viewer').style.display !== 'none') {
+                        selectTool('pin');
+                    }
+                    break;
+                case '2':
+                    if (document.getElementById('page-viewer').style.display !== 'none') {
+                        selectTool('draw');
+                    }
+                    break;
+                case 'Escape':
+                    if (document.getElementById('comment-modal').classList.contains('active')) {
+                        closeCommentModal();
+                    } else if (document.getElementById('page-viewer').style.display !== 'none') {
+                        backToDashboard();
+                    }
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>;
