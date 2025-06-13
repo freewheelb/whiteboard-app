@@ -221,6 +221,24 @@
             margin-bottom: 12px;
         }
 
+        .page-live-link {
+            margin: 8px 0 12px 0;
+        }
+
+        .page-live-link a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .page-live-link a:hover {
+            text-decoration: underline;
+        }
+
         .page-status {
             display: flex;
             align-items: center;
@@ -282,6 +300,7 @@
             gap: 12px;
             align-items: center;
             z-index: 100;
+            flex-wrap: wrap;
         }
 
         .tool-btn {
@@ -302,6 +321,21 @@
             background: #3b82f6;
             color: white;
             border-color: #3b82f6;
+        }
+
+        .password-display {
+            margin-left: 8px;
+            padding: 8px 12px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #856404;
+            display: none;
+        }
+
+        .password-display.active {
+            display: inline-block;
         }
 
         .image-overlay {
@@ -601,29 +635,6 @@
             color: white;
         }
 
-        .password-indicator {
-            font-size: 16px;
-            margin-left: 8px;
-        }
-
-        .page-live-link {
-            margin: 8px 0 12px 0;
-        }
-
-        .page-live-link a {
-            color: #3b82f6;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .page-live-link a:hover {
-            text-decoration: underline;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -648,6 +659,11 @@
             .tool-btn {
                 font-size: 12px;
                 padding: 6px 12px;
+            }
+
+            .password-display {
+                width: 100%;
+                margin: 8px 0;
             }
         }
     </style>
@@ -690,10 +706,10 @@
             </div>
 
             <div class="form-group">
-                <label for="page-access-password">Access Password (optional)</label>
-                <input type="password" id="page-access-password" placeholder="Password for clients to view this page">
+                <label for="page-access-password">Live Page Password (optional)</label>
+                <input type="text" id="page-access-password" placeholder="Squarespace development password">
                 <small style="color: #6b7280; font-size: 14px;">
-                    Leave blank if no password protection needed
+                    If the live page is password protected (e.g., Squarespace development), enter the password here to share with clients
                 </small>
             </div>
 
@@ -758,9 +774,11 @@
                 <button class="tool-btn" id="draw-tool" onclick="selectTool('draw')">✏️ Draw</button>
                 <button class="tool-btn" onclick="clearDrawing()">🗑️ Clear Drawing</button>
                 <button class="tool-btn" id="live-url-btn" onclick="openLiveUrl()" style="display: none;">🔗 View Live URL</button>
-                <span id="page-password-display" style="display: none; margin-left: 16px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 14px; color: #374151;">
-                    PW: <span id="password-text"></span>
-                </span>
+                
+                <div class="password-display" id="page-password-display">
+                    Live Page Password: <strong id="password-text"></strong>
+                </div>
+                
                 <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
                     <button class="btn btn-success" onclick="markAsCompleted()" id="complete-btn">✓ Mark Complete</button>
                     <select id="version-selector" onchange="loadVersion()">
@@ -789,7 +807,7 @@
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Uploading page...</div>
+        <div class="loading-text">Loading...</div>
     </div>
 
     <!-- Comment Modal -->
@@ -916,7 +934,7 @@
             }
         }
 
-        // Upload function with proper error handling and debugging
+        // Upload function with proper error handling
         async function uploadPage() {
             console.log('Upload function called');
             
@@ -948,7 +966,7 @@
                 const pageName = pageNameEl.value.trim();
                 const version = versionEl.value.trim();
                 let pageUrl = pageUrlEl ? pageUrlEl.value.trim() : '';
-                const password = passwordEl ? passwordEl.value : '';
+                const password = passwordEl ? passwordEl.value.trim() : '';
 
                 // Auto-add https:// to URL
                 if (pageUrl && !pageUrl.startsWith('http://') && !pageUrl.startsWith('https://')) {
@@ -1110,21 +1128,22 @@
                     `;
                     
                     clientPages.forEach(page => {
-                        const hasPassword = page.password_hash ? '🔒' : '🔓';
+                        const hasPassword = page.password_hash ? '🔐' : '';
                         const hasUrl = page.page_url ? `<a href="${page.page_url}" target="_blank">🔗 View Live</a>` : '';
+                        const passwordInfo = page.password_hash ? `• Password: ${page.password_hash}` : '';
                         
                         html += `
                             <div class="page-item">
                                 <div class="page-info">
-                                    <div class="page-name">${page.name} (${page.version})</div>
+                                    <div class="page-name">${page.name} (${page.version}) ${hasPassword}</div>
                                     <div class="page-details">
                                         Created: ${new Date(page.created_at).toLocaleDateString()}
                                         ${page.page_url ? `• URL: ${page.page_url}` : ''}
+                                        ${passwordInfo}
                                     </div>
                                 </div>
                                 <div class="page-actions">
                                     ${hasUrl}
-                                    <span class="password-indicator">${hasPassword}</span>
                                     <button class="btn btn-danger" onclick="deletePage(${page.id})" style="padding: 4px 8px; font-size: 12px;">Delete</button>
                                 </div>
                             </div>
@@ -1168,32 +1187,29 @@
         }
 
         async function deletePage(pageId) {
-            if (!confirm('Are you sure you want to delete this page?')) {
+            if (!confirm('Are you sure you want to delete this page? This action cannot be undone.')) {
                 return;
             }
 
             try {
                 showLoading('Deleting page...');
                 
-                // For now, show a helpful message since we haven't implemented the delete API yet
-                hideLoading();
-                alert('Delete functionality will be available once the delete API endpoint is created. The page data is safely stored in your database.');
-                
-                // Uncomment this when you create the delete API endpoint:
-                /*
                 const response = await fetch(`${apiUrl}/pages/${pageId}`, {
                     method: 'DELETE'
                 });
 
                 if (response.ok) {
+                    const result = await response.json();
+                    console.log('Delete successful:', result);
                     hideLoading();
-                    alert('Page deleted successfully');
-                    loadAdminPages();
+                    alert('Page deleted successfully!');
+                    loadAdminPages(); // Refresh the pages list
                 } else {
+                    const errorText = await response.text();
+                    console.error('Delete failed:', response.status, errorText);
                     hideLoading();
-                    alert('Failed to delete page');
+                    alert('Failed to delete page: ' + response.status);
                 }
-                */
                 
             } catch (error) {
                 console.error('Delete error:', error);
@@ -1327,16 +1343,6 @@
                     return;
                 }
 
-                // Check password protection
-                if (page.password_hash && page.password_hash.trim() !== '') {
-                    const password = prompt('This page is password protected. Please enter the password:');
-                    if (!password || password !== page.password_hash) {
-                        hideLoading();
-                        alert('Incorrect password');
-                        return;
-                    }
-                }
-
                 currentPage = page;
                 setPageStatus(clientName, pageName, version, 'viewed');
                 displayPageViewer(page);
@@ -1372,10 +1378,10 @@
             // Show/hide password display
             if (passwordDisplay && passwordText) {
                 if (page.password_hash && page.password_hash.trim() !== '') {
-                    passwordDisplay.style.display = 'inline-block';
+                    passwordDisplay.classList.add('active');
                     passwordText.textContent = page.password_hash;
                 } else {
-                    passwordDisplay.style.display = 'none';
+                    passwordDisplay.classList.remove('active');
                 }
             }
             
@@ -1565,7 +1571,17 @@
             // Save to localStorage
             const commentsKey = `comments_${currentPage.client_name.toLowerCase()}_${currentPage.name}_${currentPage.version}`;
             const existingComments = JSON.parse(localStorage.getItem(commentsKey) || '[]');
-            existingComments.push(comment);
+
+            if (currentCommentPin.isNew) {
+                existingComments.push(comment);
+            } else {
+                // Update existing comment
+                const index = existingComments.findIndex(c => c.id === currentCommentPin.id);
+                if (index !== -1) {
+                    existingComments[index] = { ...existingComments[index], text: text };
+                }
+            }
+
             localStorage.setItem(commentsKey, JSON.stringify(existingComments));
 
             closeCommentModal();
@@ -1689,6 +1705,7 @@
             if (completeBtn) {
                 completeBtn.textContent = '✓ Completed';
                 completeBtn.disabled = true;
+                completeBtn.style.opacity = '0.6';
             }
         }
 
@@ -1701,7 +1718,11 @@
 
             // Refresh the dashboard to show updated status
             if (currentClient) {
-                loadClientDashboard();
+                const clientInput = document.getElementById('client-access');
+                if (clientInput) {
+                    const originalValue = clientInput.value;
+                    loadClientDashboard();
+                }
             }
         }
 
