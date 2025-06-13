@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whiteboard Feedback System</title>
+    <title>Design Feedback Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -42,51 +42,46 @@
             font-size: 16px;
         }
 
-        .tab-container {
+        .admin-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .admin-toggle:hover {
+            background: #2563eb;
+        }
+
+        .admin-panel {
+            display: none;
             background: white;
             border-radius: 12px;
-            overflow: hidden;
+            padding: 24px;
+            margin-bottom: 24px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 2px solid #3b82f6;
         }
 
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 16px 24px;
-            background: #f8fafc;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            color: #64748b;
-            transition: all 0.2s;
-        }
-
-        .tab.active {
-            background: white;
-            color: #3b82f6;
-            border-bottom: 2px solid #3b82f6;
-        }
-
-        .tab:hover:not(.active) {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .tab-content {
-            display: none;
-            padding: 32px;
-        }
-
-        .tab-content.active {
+        .admin-panel.active {
             display: block;
         }
 
-        /* Admin Panel Styles */
+        .client-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
         .form-group {
             margin-bottom: 24px;
         }
@@ -162,6 +157,15 @@
             background: #4b5563;
         }
 
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
         .btn-danger {
             background: #ef4444;
             color: white;
@@ -171,11 +175,116 @@
             background: #dc2626;
         }
 
-        /* Whiteboard Viewer Styles */
+        .client-dashboard {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .client-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .client-info {
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        .pages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .page-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .page-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .page-card.viewed {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .page-card.completed {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .page-version {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .page-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .status-indicator {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-not-viewed {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .status-viewed {
+            background: #f0fdf4;
+            color: #059669;
+        }
+
+        .status-completed {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-actions button {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        .page-date {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+
         .whiteboard-container {
             position: relative;
             max-width: 100%;
-            margin: 0 auto;
+            margin: 24px auto 0;
             background: white;
             border-radius: 8px;
             overflow: hidden;
@@ -267,7 +376,6 @@
             pointer-events: all;
         }
 
-        /* Comment Modal */
         .modal {
             display: none;
             position: fixed;
@@ -358,7 +466,6 @@
             cursor: pointer;
         }
 
-        /* Comments Panel */
         .comments-panel {
             background: white;
             border-radius: 12px;
@@ -371,51 +478,11 @@
             color: #1e293b;
         }
 
-        .version-selector {
-            margin-bottom: 20px;
-        }
-
-        .version-selector select {
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-        }
-
-        /* Password Protection */
-        .password-overlay {
+        .back-btn {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .password-form {
-            background: white;
-            padding: 32px;
-            border-radius: 12px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .password-form h2 {
-            margin-bottom: 16px;
-            color: #1e293b;
-        }
-
-        .password-form input {
-            width: 100%;
-            padding: 12px;
-            margin: 16px 0;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 16px;
+            top: 70px;
+            right: 20px;
+            z-index: 999;
         }
 
         /* Responsive */
@@ -424,12 +491,8 @@
                 padding: 12px;
             }
 
-            .tabs {
-                flex-direction: column;
-            }
-
-            .tab-content {
-                padding: 16px;
+            .pages-grid {
+                grid-template-columns: 1fr;
             }
 
             .toolbar {
@@ -445,120 +508,113 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Whiteboard Feedback System</h1>
-            <p>Upload designs, collect feedback, and collaborate on web pages</p>
-        </div>
+    <button class="admin-toggle" onclick="toggleAdmin()">Admin</button>
 
-        <div class="tab-container">
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('admin')">Admin Panel</button>
-                <button class="tab" onclick="switchTab('viewer')">Page Viewer</button>
+    <div class="container">
+        <!-- Admin Panel (Hidden by default) -->
+        <div id="admin-panel" class="admin-panel">
+            <h2 style="margin-bottom: 24px; color: #3b82f6;">🔒 Admin Panel</h2>
+            
+            <div class="form-group">
+                <label for="client-name">Client Name</label>
+                <input type="text" id="client-name" placeholder="Enter client name">
             </div>
 
-            <!-- Admin Panel -->
-            <div id="admin-tab" class="tab-content active">
-                <h2 style="margin-bottom: 24px;">Upload New Page</h2>
-                
-                <div class="form-group">
-                    <label for="client-name">Client Name</label>
-                    <input type="text" id="client-name" placeholder="Enter client name">
-                </div>
+            <div class="form-group">
+                <label for="page-name">Page Name</label>
+                <input type="text" id="page-name" placeholder="Enter page name (e.g., homepage, about)">
+            </div>
 
-                <div class="form-group">
-                    <label for="page-name">Page Name</label>
-                    <input type="text" id="page-name" placeholder="Enter page name (e.g., homepage, about)">
-                </div>
+            <div class="form-group">
+                <label for="page-version">Version</label>
+                <input type="text" id="page-version" placeholder="e.g., v1.0, v2.1" value="v1.0">
+            </div>
 
-                <div class="form-group">
-                    <label for="page-version">Version</label>
-                    <input type="text" id="page-version" placeholder="e.g., v1.0, v2.1" value="v1.0">
-                </div>
+            <div class="form-group">
+                <label for="page-password">Password (optional)</label>
+                <input type="password" id="page-password" placeholder="Leave blank for no password">
+            </div>
 
-                <div class="form-group">
-                    <label for="page-password">Password (optional)</label>
-                    <input type="password" id="page-password" placeholder="Leave blank for no password">
-                </div>
-
-                <div class="form-group">
-                    <label>Upload Page Image</label>
-                    <div class="file-upload" id="file-upload">
-                        <div>
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                <polyline points="21,15 16,10 5,21"/>
-                            </svg>
-                            <p style="margin: 12px 0; font-weight: 500;">Click to upload or drag and drop</p>
-                            <p style="color: #6b7280; font-size: 14px;">PNG, JPG, GIF up to 10MB</p>
-                        </div>
-                        <input type="file" id="image-upload" accept="image/*" style="display: none;">
+            <div class="form-group">
+                <label>Upload Page Image</label>
+                <div class="file-upload" id="file-upload">
+                    <div>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                        <p style="margin: 12px 0; font-weight: 500;">Click to upload or drag and drop</p>
+                        <p style="color: #6b7280; font-size: 14px;">PNG, JPG, GIF up to 10MB</p>
                     </div>
+                    <input type="file" id="image-upload" accept="image/*" style="display: none;">
                 </div>
+            </div>
 
-                <button class="btn btn-primary" onclick="uploadPage()">Upload Page</button>
+            <button class="btn btn-primary" onclick="uploadPage()">Upload Page</button>
 
-                <div style="margin-top: 40px;">
-                    <h3>Existing Pages</h3>
-                    <div id="pages-list" style="margin-top: 16px;">
+            <div style="margin-top: 40px;">
+                <h3>Existing Pages</h3>
+                <div id="admin-pages-list" style="margin-top: 16px;">
+                    <!-- Pages will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Selector -->
+        <div class="client-selector">
+            <h2 style="margin-bottom: 16px;">Enter Your Client Portal</h2>
+            <div class="form-group">
+                <label for="client-access">Client Name</label>
+                <input type="text" id="client-access" placeholder="Enter your client name" 
+                       onkeypress="if(event.key==='Enter') loadClientDashboard()">
+                <button class="btn btn-primary" onclick="loadClientDashboard()" style="margin-top: 8px;">Access Dashboard</button>
+            </div>
+        </div>
+
+        <!-- Client Dashboard -->
+        <div id="client-dashboard" style="display: none;">
+            <div class="client-dashboard">
+                <div class="client-name" id="client-display-name"></div>
+                <div class="client-info" id="client-info"></div>
+                
+                <div id="pages-container">
+                    <div class="pages-grid" id="pages-grid">
                         <!-- Pages will be loaded here -->
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Page Viewer -->
-            <div id="viewer-tab" class="tab-content">
-                <div class="form-group">
-                    <label for="page-url">Enter Page URL</label>
-                    <input type="text" id="page-url" placeholder="client-name/page-name" 
-                           onkeypress="if(event.key==='Enter') loadPageViewer()">
-                    <button class="btn btn-secondary" onclick="loadPageViewer()" style="margin-top: 8px;">Load Page</button>
+        <!-- Page Viewer -->
+        <div id="page-viewer" style="display: none;">
+            <button class="btn btn-secondary back-btn" onclick="backToDashboard()">← Back to Dashboard</button>
+            
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="tool-btn active" id="pin-tool" onclick="selectTool('pin')">📍 Pin Comment</button>
+                <button class="tool-btn" id="draw-tool" onclick="selectTool('draw')">✏️ Draw</button>
+                <button class="tool-btn" onclick="clearDrawing()">🗑️ Clear Drawing</button>
+                <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+                    <button class="btn btn-success" onclick="markAsCompleted()" id="complete-btn">✓ Mark Complete</button>
+                    <select id="version-selector" onchange="loadVersion()">
+                        <option value="">Select Version</option>
+                    </select>
                 </div>
+            </div>
 
-                <div id="page-viewer" style="display: none;">
-                    <!-- Password protection overlay -->
-                    <div id="password-overlay" class="password-overlay" style="display: none;">
-                        <div class="password-form">
-                            <h2>Password Required</h2>
-                            <input type="password" id="viewer-password" placeholder="Enter password" 
-                                   onkeypress="if(event.key==='Enter') checkPassword()">
-                            <button class="btn btn-primary" onclick="checkPassword()">Access Page</button>
-                        </div>
-                    </div>
+            <!-- Whiteboard container -->
+            <div class="whiteboard-container">
+                <img id="page-image" class="whiteboard-image" src="" alt="Page design">
+                <div id="image-overlay" class="image-overlay active"></div>
+                <canvas id="drawing-canvas" class="drawing-canvas"></canvas>
+            </div>
 
-                    <!-- Toolbar -->
-                    <div class="toolbar">
-                        <button class="tool-btn active" id="pin-tool" onclick="selectTool('pin')">📍 Pin Comment</button>
-                        <button class="tool-btn" id="draw-tool" onclick="selectTool('draw')">✏️ Draw</button>
-                        <button class="tool-btn" onclick="clearDrawing()">🗑️ Clear Drawing</button>
-                        <div style="margin-left: auto;">
-                            <select id="version-selector" onchange="loadVersion()">
-                                <option value="">Select Version</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Whiteboard container -->
-                    <div class="whiteboard-container">
-                        <img id="page-image" class="whiteboard-image" src="" alt="Page design">
-                        <div id="image-overlay" class="image-overlay active"></div>
-                        <canvas id="drawing-canvas" class="drawing-canvas"></canvas>
-                    </div>
-
-                    <!-- Comments panel -->
-                    <div class="comments-panel">
-                        <h3>All Comments</h3>
-                        <div class="version-selector">
-                            <label>Filter by version: </label>
-                            <select id="comments-version-filter" onchange="filterComments()">
-                                <option value="">All versions</option>
-                            </select>
-                        </div>
-                        <div id="comments-list">
-                            <!-- Comments will be loaded here -->
-                        </div>
-                    </div>
+            <!-- Comments panel -->
+            <div class="comments-panel">
+                <h3>All Comments</h3>
+                <div id="comments-list">
+                    <!-- Comments will be loaded here -->
                 </div>
             </div>
         </div>
@@ -580,9 +636,6 @@
                 <button class="btn btn-secondary" onclick="closeCommentModal()">Cancel</button>
                 <button class="btn btn-danger" id="delete-comment-btn" onclick="deleteComment()" style="display: none;">Delete Comment</button>
             </div>
-            <div id="comment-history" style="margin-top: 20px;">
-                <!-- Existing comments for this pin will show here -->
-            </div>
         </div>
     </div>
 
@@ -590,6 +643,7 @@
         // Global state
         let currentTool = 'pin';
         let currentPage = null;
+        let currentClient = null;
         let currentCommentPin = null;
         let isDrawing = false;
         let drawingContext = null;
@@ -603,18 +657,13 @@
         function initializeApp() {
             setupFileUpload();
             setupDrawingCanvas();
-            loadExistingPages();
+            loadAdminPages();
         }
 
-        // Tab switching
-        function switchTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Show selected tab
-            document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            document.getElementById(`${tabName}-tab`).classList.add('active');
+        // Admin panel toggle
+        function toggleAdmin() {
+            const adminPanel = document.getElementById('admin-panel');
+            adminPanel.classList.toggle('active');
         }
 
         // File upload handling
@@ -645,10 +694,8 @@
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
-                // Store the file for upload
                 window.selectedFile = file;
                 
-                // Show preview
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const preview = document.createElement('img');
@@ -668,41 +715,6 @@
             }
         }
 
-        // Database operations
-        async function initializeDatabase() {
-            try {
-                const response = await fetch(`${apiUrl}/`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    document.getElementById('db-status').innerHTML = 
-                        '<div style="color: #059669; padding: 12px; background: #ecfdf5; border-radius: 6px;">Database connected successfully!</div>';
-                } else {
-                    throw new Error('Database connection failed');
-                }
-            } catch (error) {
-                document.getElementById('db-status').innerHTML = 
-                    '<div style="color: #dc2626; padding: 12px; background: #fef2f2; border-radius: 6px;">Database connection failed: ' + error.message + '</div>';
-            }
-        }
-
-        async function testConnection() {
-            try {
-                const response = await fetch(`${apiUrl}/`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    document.getElementById('db-status').innerHTML = 
-                        '<div style="color: #059669; padding: 12px; background: #ecfdf5; border-radius: 6px;">✅ Database connection successful!</div>';
-                } else {
-                    throw new Error('Connection test failed');
-                }
-            } catch (error) {
-                document.getElementById('db-status').innerHTML = 
-                    '<div style="color: #dc2626; padding: 12px; background: #fef2f2; border-radius: 6px;">❌ Connection failed: ' + error.message + '</div>';
-            }
-        }
-
         // Page upload
         async function uploadPage() {
             const clientName = document.getElementById('client-name').value.trim();
@@ -716,7 +728,6 @@
             }
 
             try {
-                // Convert file to base64
                 const imageData = await fileToBase64(window.selectedFile);
                 
                 const response = await fetch(`${apiUrl}/pages`, {
@@ -736,7 +747,7 @@
                 if (response.ok) {
                     alert('Page uploaded successfully!');
                     clearUploadForm();
-                    loadExistingPages();
+                    loadAdminPages();
                 } else {
                     const error = await response.json();
                     alert('Upload failed: ' + error.error);
@@ -769,32 +780,43 @@
             }
         }
 
-        async function loadExistingPages() {
+        async function loadAdminPages() {
             try {
                 const response = await fetch(`${apiUrl}/pages`);
                 const pages = await response.json();
-                const pagesList = document.getElementById('pages-list');
+                const pagesList = document.getElementById('admin-pages-list');
                 
                 if (pages.length === 0) {
                     pagesList.innerHTML = '<p style="color: #6b7280;">No pages uploaded yet.</p>';
                     return;
                 }
 
-                pagesList.innerHTML = pages.map((page, index) => `
+                pagesList.innerHTML = pages.map((page) => `
                     <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <strong>${page.client_name}/${page.name}</strong> - ${page.version}
                             <br><small style="color: #6b7280;">Uploaded: ${new Date(page.created_at).toLocaleDateString()}</small>
                         </div>
                         <div>
-                            <button class="btn btn-secondary" onclick="viewPage('${page.client_name}/${page.name}')" style="margin-right: 8px; padding: 6px 12px; font-size: 14px;">View</button>
+                            <button class="btn btn-secondary" onclick="adminViewPage('${page.client_name}', '${page.name}')" style="margin-right: 8px; padding: 6px 12px; font-size: 14px;">View</button>
                             <button class="btn btn-danger" onclick="deletePage(${page.id})" style="padding: 6px 12px; font-size: 14px;">Delete</button>
                         </div>
                     </div>
                 `).join('');
             } catch (error) {
-                document.getElementById('pages-list').innerHTML = '<p style="color: #ef4444;">Error loading pages: ' + error.message + '</p>';
+                document.getElementById('admin-pages-list').innerHTML = '<p style="color: #ef4444;">Error loading pages: ' + error.message + '</p>';
             }
+        }
+
+        function adminViewPage(clientName, pageName) {
+            document.getElementById('client-access').value = clientName;
+            loadClientDashboard();
+            setTimeout(() => {
+                const pageCard = document.querySelector(`[data-page="${pageName}"]`);
+                if (pageCard) {
+                    pageCard.click();
+                }
+            }, 500);
         }
 
         async function deletePage(pageId) {
@@ -805,7 +827,7 @@
                     });
                     
                     if (response.ok) {
-                        loadExistingPages();
+                        loadAdminPages();
                     } else {
                         alert('Failed to delete page');
                     }
@@ -815,28 +837,75 @@
             }
         }
 
-        function viewPage(pageUrl) {
-            document.getElementById('page-url').value = pageUrl;
-            switchTab('viewer');
-            loadPageViewer();
+        // Client dashboard
+        async function loadClientDashboard() {
+            const clientName = document.getElementById('client-access').value.trim();
+            if (!clientName) {
+                alert('Please enter a client name');
+                return;
+            }
+
+            currentClient = clientName;
+
+            try {
+                const response = await fetch(`${apiUrl}/pages`);
+                const allPages = await response.json();
+                const clientPages = allPages.filter(page => 
+                    page.client_name.toLowerCase() === clientName.toLowerCase()
+                );
+
+                if (clientPages.length === 0) {
+                    alert('No pages found for this client');
+                    return;
+                }
+
+                // Show dashboard
+                document.getElementById('client-dashboard').style.display = 'block';
+                document.getElementById('client-display-name').textContent = clientName;
+                document.getElementById('client-info').textContent = `${clientPages.length} page(s) available for review`;
+
+                // Load page status from localStorage
+                const pageStatuses = JSON.parse(localStorage.getItem('pageStatuses') || '{}');
+
+                // Group pages by name, then show latest version of each
+                const pageGroups = {};
+                clientPages.forEach(page => {
+                    if (!pageGroups[page.name] || new Date(page.created_at) > new Date(pageGroups[page.name].created_at)) {
+                        pageGroups[page.name] = page;
+                    }
+                });
+
+                const pagesGrid = document.getElementById('pages-grid');
+                pagesGrid.innerHTML = Object.values(pageGroups).map(page => {
+                    const statusKey = `${page.client_name}-${page.name}`;
+                    const status = pageStatuses[statusKey] || 'not-viewed';
+                    
+                    return `
+                        <div class="page-card ${status}" data-page="${page.name}" onclick="openPage('${page.client_name}', '${page.name}')">
+                            <div class="page-title">${page.name}</div>
+                            <div class="page-version">Version: ${page.version}</div>
+                            <div class="page-status">
+                                <span class="status-indicator status-${status}">
+                                    ${status === 'not-viewed' ? 'NOT VIEWED' : 
+                                      status === 'viewed' ? 'VIEWED' : 'COMPLETED'}
+                                </span>
+                            </div>
+                            <div class="page-date">
+                                Uploaded: ${new Date(page.created_at).toLocaleDateString()}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                alert('Error loading client dashboard: ' + error.message);
+            }
         }
 
         // Page viewer
-        async function loadPageViewer() {
-            const pageUrl = document.getElementById('page-url').value.trim();
-            if (!pageUrl) {
-                alert('Please enter a page URL');
-                return;
-            }
-
-            const [client, pageName] = pageUrl.split('/');
-            if (!client || !pageName) {
-                alert('Please use format: client-name/page-name');
-                return;
-            }
-
+        async function openPage(clientName, pageName) {
             try {
-                const response = await fetch(`${apiUrl}/page/${client}/${pageName}`);
+                const response = await fetch(`${apiUrl}/page/${clientName}/${pageName}`);
                 
                 if (!response.ok) {
                     if (response.status === 404) {
@@ -848,464 +917,31 @@
                 }
 
                 const pageVersions = await response.json();
-                
-                // Load the latest version by default
                 const latestPage = pageVersions[0];
                 currentPage = latestPage;
 
+                // Mark as viewed
+                markAsViewed(clientName, pageName);
+
                 // Check password protection
                 if (latestPage.hasPassword) {
-                    document.getElementById('password-overlay').style.display = 'flex';
-                    return;
+                    const password = prompt('This page is password protected. Please enter the password:');
+                    if (!password) return;
+
+                    const passwordResponse = await fetch(`${apiUrl}/page/${clientName}/${pageName}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ password })
+                    });
+
+                    const result = await passwordResponse.json();
+                    if (!result.success) {
+                        alert('Incorrect password');
+                        return;
+                    }
                 }
 
                 displayPage(latestPage, pageVersions);
-            } catch (error) {
-                alert('Error loading page: ' + error.message);
             }
-        }
-
-        async function checkPassword() {
-            const enteredPassword = document.getElementById('viewer-password').value;
-            const [client, pageName] = document.getElementById('page-url').value.split('/');
-            
-            try {
-                const response = await fetch(`${apiUrl}/page/${client}/${pageName}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ password: enteredPassword })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.getElementById('password-overlay').style.display = 'none';
-                    const pageResponse = await fetch(`${apiUrl}/page/${client}/${pageName}`);
-                    const pageVersions = await pageResponse.json();
-                    displayPage(currentPage, pageVersions);
-                } else {
-                    alert('Incorrect password');
-                }
-            } catch (error) {
-                alert('Error verifying password: ' + error.message);
-            }
-        }
-
-        function displayPage(page, allVersions) {
-            // Show the page viewer
-            document.getElementById('page-viewer').style.display = 'block';
-            
-            // Set the image
-            document.getElementById('page-image').src = page.image_data;
-            
-            // Populate version selector
-            const versionSelector = document.getElementById('version-selector');
-            const commentsVersionFilter = document.getElementById('comments-version-filter');
-            
-            versionSelector.innerHTML = allVersions.map(v => 
-                `<option value="${v.id}" ${v.id === page.id ? 'selected' : ''}>${v.version}</option>`
-            ).join('');
-            
-            commentsVersionFilter.innerHTML = '<option value="">All versions</option>' + 
-                allVersions.map(v => `<option value="${v.version}">${v.version}</option>`).join('');
-            
-            // Setup canvas for drawing
-            setupCanvas();
-            
-            // Load comments and pins for this page
-            loadComments();
-        }
-
-        async function loadVersion() {
-            const selectedPageId = document.getElementById('version-selector').value;
-            const [client, pageName] = document.getElementById('page-url').value.split('/');
-            
-            try {
-                const response = await fetch(`${apiUrl}/page/${client}/${pageName}`);
-                const pageVersions = await response.json();
-                const page = pageVersions.find(p => p.id == selectedPageId);
-                
-                if (page) {
-                    currentPage = page;
-                    document.getElementById('page-image').src = page.image_data;
-                    loadComments();
-                    clearDrawing();
-                }
-            } catch (error) {
-                console.error('Error loading version:', error);
-            }
-        }
-
-        // Drawing canvas setup
-        function setupDrawingCanvas() {
-            // This will be called when the image loads
-        }
-
-        function setupCanvas() {
-            const canvas = document.getElementById('drawing-canvas');
-            const image = document.getElementById('page-image');
-            
-            // Wait for image to load to get proper dimensions
-            image.onload = function() {
-                canvas.width = image.offsetWidth;
-                canvas.height = image.offsetHeight;
-                drawingContext = canvas.getContext('2d');
-                drawingContext.strokeStyle = '#ef4444';
-                drawingContext.lineWidth = 3;
-                drawingContext.lineCap = 'round';
-            };
-            
-            // If image is already loaded
-            if (image.complete) {
-                canvas.width = image.offsetWidth;
-                canvas.height = image.offsetHeight;
-                drawingContext = canvas.getContext('2d');
-                drawingContext.strokeStyle = '#ef4444';
-                drawingContext.lineWidth = 3;
-                drawingContext.lineCap = 'round';
-            }
-        }
-
-        // Tool selection
-        function selectTool(tool) {
-            currentTool = tool;
-            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`${tool}-tool`).classList.add('active');
-            
-            const overlay = document.getElementById('image-overlay');
-            const canvas = document.getElementById('drawing-canvas');
-            
-            if (tool === 'pin') {
-                overlay.classList.add('active');
-                canvas.classList.remove('active');
-            } else if (tool === 'draw') {
-                overlay.classList.remove('active');
-                canvas.classList.add('active');
-                setupDrawingEvents();
-            }
-        }
-
-        function setupDrawingEvents() {
-            const canvas = document.getElementById('drawing-canvas');
-            
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-            
-            // Touch events for mobile
-            canvas.addEventListener('touchstart', handleTouch);
-            canvas.addEventListener('touchmove', handleTouch);
-            canvas.addEventListener('touchend', stopDrawing);
-        }
-
-        function startDrawing(e) {
-            if (currentTool !== 'draw') return;
-            isDrawing = true;
-            const rect = e.target.getBoundingClientRect();
-            drawingContext.beginPath();
-            drawingContext.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-        }
-
-        function draw(e) {
-            if (!isDrawing || currentTool !== 'draw') return;
-            const rect = e.target.getBoundingClientRect();
-            drawingContext.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-            drawingContext.stroke();
-        }
-
-        function stopDrawing() {
-            if (isDrawing) {
-                isDrawing = false;
-                saveDrawing();
-            }
-        }
-
-        function handleTouch(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
-                                           e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            e.target.dispatchEvent(mouseEvent);
-        }
-
-        function clearDrawing() {
-            if (drawingContext) {
-                drawingContext.clearRect(0, 0, drawingContext.canvas.width, drawingContext.canvas.height);
-                saveDrawing();
-            }
-        }
-
-        function saveDrawing() {
-            if (!drawingContext || !currentPage) return;
-            
-            const drawingData = drawingContext.canvas.toDataURL();
-            const drawings = JSON.parse(localStorage.getItem('drawings') || '[]');
-            
-            // Remove existing drawing for this page version
-            const filteredDrawings = drawings.filter(d => 
-                !(d.client === currentPage.client && d.page === currentPage.page && d.version === currentPage.version)
-            );
-            
-            // Add new drawing if not empty
-            if (drawingData !== 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==') {
-                filteredDrawings.push({
-                    client: currentPage.client,
-                    page: currentPage.page,
-                    version: currentPage.version,
-                    drawingData: drawingData,
-                    created: new Date().toISOString()
-                });
-            }
-            
-            localStorage.setItem('drawings', JSON.stringify(filteredDrawings));
-        }
-
-        // Pin and comment handling
-        document.getElementById('image-overlay').addEventListener('click', function(e) {
-            if (currentTool !== 'pin') return;
-            
-            const rect = this.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            
-            // Check if clicking on existing pin
-            const existingPin = e.target.closest('.pin');
-            if (existingPin) {
-                openCommentModal(existingPin.dataset.commentId);
-                return;
-            }
-            
-            // Create new pin
-            createPin(x, y);
-            openCommentModal(null, x, y);
-        });
-
-        function createPin(x, y, commentId = null) {
-            const pin = document.createElement('div');
-            pin.className = 'pin';
-            pin.style.left = x + '%';
-            pin.style.top = y + '%';
-            pin.dataset.x = x;
-            pin.dataset.y = y;
-            if (commentId) {
-                pin.dataset.commentId = commentId;
-            }
-            
-            document.getElementById('image-overlay').appendChild(pin);
-            return pin;
-        }
-
-        function openCommentModal(commentId = null, x = null, y = null) {
-            currentCommentPin = { commentId, x, y };
-            document.getElementById('comment-modal').classList.add('active');
-            
-            if (commentId) {
-                // Editing existing comment - show delete button
-                document.getElementById('comment-text').value = 'Loading...'; // Will be loaded by API
-                document.getElementById('delete-comment-btn').style.display = 'block';
-                loadCommentHistory(commentId);
-            } else {
-                // New comment - hide delete button
-                document.getElementById('comment-text').value = '';
-                document.getElementById('delete-comment-btn').style.display = 'none';
-                document.getElementById('comment-history').innerHTML = '';
-            }
-        }
-
-        function closeCommentModal() {
-            document.getElementById('comment-modal').classList.remove('active');
-            currentCommentPin = null;
-        }
-
-        function saveComment() {
-            const text = document.getElementById('comment-text').value.trim();
-            
-            if (!text || !currentPage) {
-                alert('Please enter a comment');
-                return;
-            }
-            
-            // For now, we'll simulate saving to localStorage until we create the API endpoint
-            const comments = JSON.parse(localStorage.getItem('comments') || '[]');
-            
-            if (currentCommentPin.commentId) {
-                // Update existing comment
-                const commentIndex = comments.findIndex(c => c.id === currentCommentPin.commentId);
-                if (commentIndex >= 0) {
-                    comments[commentIndex].text = text;
-                    comments[commentIndex].updated = new Date().toISOString();
-                }
-            } else {
-                // Create new comment
-                const newComment = {
-                    id: Date.now().toString(),
-                    pageId: currentPage.id,
-                    client: currentPage.client_name,
-                    page: currentPage.name,
-                    version: currentPage.version,
-                    x: currentCommentPin.x,
-                    y: currentCommentPin.y,
-                    text: text,
-                    created: new Date().toISOString()
-                };
-                comments.push(newComment);
-                
-                // Create pin for new comment
-                createPin(currentCommentPin.x, currentCommentPin.y, newComment.id);
-            }
-            
-            localStorage.setItem('comments', JSON.stringify(comments));
-            closeCommentModal();
-            loadComments();
-        }
-
-        function deleteComment() {
-            if (!currentCommentPin.commentId) return;
-            
-            if (confirm('Are you sure you want to delete this comment?')) {
-                const comments = JSON.parse(localStorage.getItem('comments') || '[]');
-                const filteredComments = comments.filter(c => c.id !== currentCommentPin.commentId);
-                localStorage.setItem('comments', JSON.stringify(filteredComments));
-                
-                // Remove pin
-                const pin = document.querySelector(`[data-comment-id="${currentCommentPin.commentId}"]`);
-                if (pin) {
-                    pin.remove();
-                }
-                
-                closeCommentModal();
-                loadComments();
-            }
-        }
-
-        function loadComments() {
-            if (!currentPage) return;
-            
-            const comments = JSON.parse(localStorage.getItem('comments') || '[]');
-            const pageComments = comments.filter(c => 
-                c.client === currentPage.client && c.page === currentPage.page
-            );
-            
-            // Clear existing pins
-            document.querySelectorAll('.pin').forEach(pin => pin.remove());
-            
-            // Create pins for current version comments
-            const currentVersionComments = pageComments.filter(c => c.version === currentPage.version);
-            currentVersionComments.forEach(comment => {
-                createPin(comment.x, comment.y, comment.id);
-            });
-            
-            // Display all comments in sidebar
-            displayCommentsList(pageComments);
-        }
-
-        function displayCommentsList(comments) {
-            const commentsList = document.getElementById('comments-list');
-            
-            if (comments.length === 0) {
-                commentsList.innerHTML = '<p style="color: #6b7280;">No comments yet.</p>';
-                return;
-            }
-            
-            // Sort comments by creation date
-            comments.sort((a, b) => new Date(b.created) - new Date(a.created));
-            
-            commentsList.innerHTML = comments.map(comment => `
-                <div class="comment">
-                    <div class="comment-meta">
-                        ${comment.version} • ${new Date(comment.created).toLocaleDateString()}
-                        ${comment.updated ? `• Updated: ${new Date(comment.updated).toLocaleDateString()}` : ''}
-                    </div>
-                    <div>${comment.text}</div>
-                    <div class="comment-actions">
-                        <button onclick="jumpToComment('${comment.id}')" style="background: #3b82f6; color: white;">Jump to Pin</button>
-                        <button onclick="openCommentModal('${comment.id}')" style="background: #6b7280; color: white;">Edit</button>
-                        <button onclick="deleteCommentFromList('${comment.id}')" style="background: #ef4444; color: white;">Delete</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function deleteCommentFromList(commentId) {
-            if (confirm('Are you sure you want to delete this comment?')) {
-                const comments = JSON.parse(localStorage.getItem('comments') || '[]');
-                const filteredComments = comments.filter(c => c.id !== commentId);
-                localStorage.setItem('comments', JSON.stringify(filteredComments));
-                
-                // Remove pin
-                const pin = document.querySelector(`[data-comment-id="${commentId}"]`);
-                if (pin) {
-                    pin.remove();
-                }
-                
-                loadComments();
-            }
-        }
-
-        function filterComments() {
-            if (!currentPage) return;
-            
-            const selectedVersion = document.getElementById('comments-version-filter').value;
-            const comments = JSON.parse(localStorage.getItem('comments') || '[]');
-            let pageComments = comments.filter(c => 
-                c.client === currentPage.client && c.page === currentPage.page
-            );
-            
-            if (selectedVersion) {
-                pageComments = pageComments.filter(c => c.version === selectedVersion);
-            }
-            
-            displayCommentsList(pageComments);
-        }
-
-        function jumpToComment(commentId) {
-            const pin = document.querySelector(`[data-comment-id="${commentId}"]`);
-            if (pin) {
-                pin.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                pin.style.animation = 'none';
-                setTimeout(() => {
-                    pin.style.animation = 'pulse 2s infinite';
-                }, 100);
-            }
-        }
-
-        function loadCommentHistory(commentId) {
-            // This would load edit history for a comment in a real application
-            document.getElementById('comment-history').innerHTML = 
-                '<p style="color: #6b7280; font-size: 14px; margin-top: 12px;">Comment history would appear here in a full implementation.</p>';
-        }
-
-        // Window resize handler to maintain canvas size
-        window.addEventListener('resize', function() {
-            if (document.getElementById('page-viewer').style.display !== 'none') {
-                setTimeout(setupCanvas, 100);
-            }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
-            switch(e.key) {
-                case '1':
-                    selectTool('pin');
-                    break;
-                case '2':
-                    selectTool('draw');
-                    break;
-                case 'Escape':
-                    if (document.getElementById('comment-modal').classList.contains('active')) {
-                        closeCommentModal();
-                    }
-                    break;
-            }
-        });
-    </script>
-</body>
-</html>
