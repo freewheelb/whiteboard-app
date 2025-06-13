@@ -1,6 +1,5 @@
-// api/pages.js - Updated to include page_url field
+// api/pages.js - Updated to store passwords as plain text
 const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -56,16 +55,13 @@ module.exports = async (req, res) => {
       }
       clientId = clientResult.rows[0].id;
 
-      // Hash password if provided
-      let passwordHash = null;
-      if (password) {
-        passwordHash = await bcrypt.hash(password, 10);
-      }
+      // Store password as plain text (not hashed) since it's for sharing Squarespace passwords
+      const passwordToStore = password || null;
 
       try {
         const result = await pool.query(
           'INSERT INTO pages (client_id, name, version, page_url, password_hash, image_data) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-          [clientId, pageName, version, pageUrl || null, passwordHash, imageData]
+          [clientId, pageName, version, pageUrl || null, passwordToStore, imageData]
         );
         return res.status(201).json(result.rows[0]);
       } catch (error) {
