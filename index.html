@@ -34,6 +34,17 @@
             align-items: center;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            height: 40px;
+            width: auto;
+        }
+
         .header-content h1 {
             color: #1e293b;
             margin-bottom: 8px;
@@ -43,6 +54,23 @@
         .header-content p {
             color: #64748b;
             font-size: 16px;
+        }
+
+        .btn-admin {
+            background: #EE5997;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-admin:hover {
+            background: #e04585;
+            transform: translateY(-1px);
         }
 
         .admin-panel {
@@ -647,6 +675,16 @@
                 gap: 16px;
             }
 
+            .header-left {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .header-logo {
+                height: 32px;
+            }
+
             .pages-grid {
                 grid-template-columns: 1fr;
             }
@@ -671,11 +709,16 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-content">
-                <h1>Design Feedback Dashboard</h1>
-                <p>Review designs and provide feedback</p>
+            <div class="header-left">
+                <img src="https://images.squarespace-cdn.com/content/v1/654eaa35544df93addc9876a/3442d38d-8d88-41d6-ad99-034131d0539b/MDM+Logo+Blue+to+Pink+Gradient.png?format=1500w" 
+                     alt="MDM Logo" 
+                     class="header-logo">
+                <div class="header-content">
+                    <h1>Design Feedback Dashboard</h1>
+                    <p>Review designs and provide feedback</p>
+                </div>
             </div>
-            <button class="btn btn-secondary" onclick="toggleAdmin()" style="font-size: 14px;">🔒 Admin</button>
+            <button class="btn-admin" onclick="toggleAdmin()">🔒 Admin</button>
         </div>
 
         <!-- Admin Panel (Hidden by default) -->
