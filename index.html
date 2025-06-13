@@ -630,14 +630,14 @@
 
             <div class="form-group">
                 <label for="page-version">Version</label>
-                <input type="text" id="page-version" placeholder="e.g., v1.0, v2.1" value="v1.0">
+                <input type="text" id="page-version" placeholder="e.g., 1.0, 2.1" value="1.0">
             </div>
 
             <div class="form-group">
                 <label for="page-url">Page URL (optional)</label>
-                <input type="url" id="page-url" placeholder="https://example.com/page-name">
+                <input type="text" id="page-url" placeholder="domain.com/page-name">
                 <small style="color: #6b7280; font-size: 14px;">
-                    The live URL where this page can be viewed
+                    Just enter the domain - "https://" will be added automatically
                 </small>
             </div>
 
@@ -665,7 +665,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-primary" onclick="uploadPage(); console.log('Button clicked');">Upload Page</button>
+            <button class="btn btn-primary" onclick="uploadPageNew(); console.log('New button clicked');">Upload Page</button>
 
             <div style="margin-top: 40px;">
                 <h3>Existing Pages</h3>
@@ -939,7 +939,7 @@
         function clearUploadForm() {
             document.getElementById('client-name').value = '';
             document.getElementById('page-name').value = '';
-            document.getElementById('page-version').value = 'v1.0';
+            document.getElementById('page-version').value = '1.0';
             document.getElementById('page-url').value = '';
             document.getElementById('page-access-password').value = '';
             window.selectedFile = null;
