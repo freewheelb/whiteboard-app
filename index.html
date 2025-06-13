@@ -606,6 +606,24 @@
             margin-left: 8px;
         }
 
+        .page-live-link {
+            margin: 8px 0 12px 0;
+        }
+
+        .page-live-link a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .page-live-link a:hover {
+            text-decoration: underline;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -739,6 +757,10 @@
                 <button class="tool-btn active" id="pin-tool" onclick="selectTool('pin')">📍 Pin Comment</button>
                 <button class="tool-btn" id="draw-tool" onclick="selectTool('draw')">✏️ Draw</button>
                 <button class="tool-btn" onclick="clearDrawing()">🗑️ Clear Drawing</button>
+                <button class="tool-btn" id="live-url-btn" onclick="openLiveUrl()" style="display: none;">🔗 View Live URL</button>
+                <span id="page-password-display" style="display: none; margin-left: 16px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 14px; color: #374151;">
+                    PW: <span id="password-text"></span>
+                </span>
                 <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
                     <button class="btn btn-success" onclick="markAsCompleted()" id="complete-btn">✓ Mark Complete</button>
                     <select id="version-selector" onchange="loadVersion()">
@@ -1250,11 +1272,16 @@
                 pages.forEach(page => {
                     const status = getPageStatus(page);
                     const statusClass = status.toLowerCase().replace(/\s+/g, '-');
+                    const livePageLink = page.page_url ? 
+                        `<div class="page-live-link">
+                            <a href="${page.page_url}" target="_blank" onclick="event.stopPropagation()">🔗 View Live Page</a>
+                        </div>` : '';
                     
                     html += `
                         <div class="page-card ${statusClass}" onclick="openPage('${page.client_name}', '${page.name}', '${page.version}')">
                             <div class="page-title">${page.name}</div>
                             <div class="page-version">Version ${page.version}</div>
+                            ${livePageLink}
                             <div class="page-status">
                                 <span class="status-indicator status-${statusClass}">${status}</span>
                             </div>
@@ -1326,9 +1353,31 @@
             const clientDashboard = document.getElementById('client-dashboard');
             const pageViewer = document.getElementById('page-viewer');
             const pageImage = document.getElementById('page-image');
+            const liveUrlBtn = document.getElementById('live-url-btn');
+            const passwordDisplay = document.getElementById('page-password-display');
+            const passwordText = document.getElementById('password-text');
 
             if (clientDashboard) clientDashboard.style.display = 'none';
             if (pageViewer) pageViewer.style.display = 'block';
+            
+            // Show/hide live URL button
+            if (liveUrlBtn) {
+                if (page.page_url) {
+                    liveUrlBtn.style.display = 'inline-block';
+                } else {
+                    liveUrlBtn.style.display = 'none';
+                }
+            }
+            
+            // Show/hide password display
+            if (passwordDisplay && passwordText) {
+                if (page.password_hash && page.password_hash.trim() !== '') {
+                    passwordDisplay.style.display = 'inline-block';
+                    passwordText.textContent = page.password_hash;
+                } else {
+                    passwordDisplay.style.display = 'none';
+                }
+            }
             
             if (pageImage) {
                 pageImage.src = page.image_data;
@@ -1653,6 +1702,12 @@
             // Refresh the dashboard to show updated status
             if (currentClient) {
                 loadClientDashboard();
+            }
+        }
+
+        function openLiveUrl() {
+            if (currentPage && currentPage.page_url) {
+                window.open(currentPage.page_url, '_blank');
             }
         }
 
