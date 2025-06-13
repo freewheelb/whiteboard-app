@@ -572,17 +572,13 @@
                 <button class="close-btn" onclick="closeCommentModal()">&times;</button>
             </div>
             <div style="margin-bottom: 16px;">
-                <label for="commenter-name">Your Name</label>
-                <input type="text" id="commenter-name" placeholder="Enter your name">
-            </div>
-            <div style="margin-bottom: 16px;">
                 <label for="comment-text">Comment</label>
                 <textarea id="comment-text" class="comment-input" placeholder="Enter your feedback..."></textarea>
             </div>
             <div style="display: flex; gap: 12px;">
                 <button class="btn btn-primary" onclick="saveComment()">Save Comment</button>
                 <button class="btn btn-secondary" onclick="closeCommentModal()">Cancel</button>
-                <button class="btn btn-danger" id="delete-comment-btn" onclick="deleteComment()" style="display: none;">Delete</button>
+                <button class="btn btn-danger" id="delete-comment-btn" onclick="deleteComment()" style="display: none;">Delete Comment</button>
             </div>
             <div id="comment-history" style="margin-top: 20px;">
                 <!-- Existing comments for this pin will show here -->
@@ -1110,18 +1106,12 @@
             document.getElementById('comment-modal').classList.add('active');
             
             if (commentId) {
-                // Editing existing comment
-                const comments = JSON.parse(localStorage.getItem('comments') || '[]');
-                const comment = comments.find(c => c.id === commentId);
-                if (comment) {
-                    document.getElementById('commenter-name').value = comment.name;
-                    document.getElementById('comment-text').value = comment.text;
-                    document.getElementById('delete-comment-btn').style.display = 'block';
-                    loadCommentHistory(commentId);
-                }
+                // Editing existing comment - show delete button
+                document.getElementById('comment-text').value = 'Loading...'; // Will be loaded by API
+                document.getElementById('delete-comment-btn').style.display = 'block';
+                loadCommentHistory(commentId);
             } else {
-                // New comment
-                document.getElementById('commenter-name').value = '';
+                // New comment - hide delete button
                 document.getElementById('comment-text').value = '';
                 document.getElementById('delete-comment-btn').style.display = 'none';
                 document.getElementById('comment-history').innerHTML = '';
@@ -1134,21 +1124,20 @@
         }
 
         function saveComment() {
-            const name = document.getElementById('commenter-name').value.trim();
             const text = document.getElementById('comment-text').value.trim();
             
-            if (!name || !text || !currentPage) {
-                alert('Please enter your name and comment');
+            if (!text || !currentPage) {
+                alert('Please enter a comment');
                 return;
             }
             
+            // For now, we'll simulate saving to localStorage until we create the API endpoint
             const comments = JSON.parse(localStorage.getItem('comments') || '[]');
             
             if (currentCommentPin.commentId) {
                 // Update existing comment
                 const commentIndex = comments.findIndex(c => c.id === currentCommentPin.commentId);
                 if (commentIndex >= 0) {
-                    comments[commentIndex].name = name;
                     comments[commentIndex].text = text;
                     comments[commentIndex].updated = new Date().toISOString();
                 }
@@ -1156,19 +1145,19 @@
                 // Create new comment
                 const newComment = {
                     id: Date.now().toString(),
-                    client: currentPage.client,
-                    page: currentPage.page,
+                    pageId: currentPage.id,
+                    client: currentPage.client_name,
+                    page: currentPage.name,
                     version: currentPage.version,
                     x: currentCommentPin.x,
                     y: currentCommentPin.y,
-                    name: name,
                     text: text,
                     created: new Date().toISOString()
                 };
                 comments.push(newComment);
                 
                 // Create pin for new comment
-                const pin = createPin(currentCommentPin.x, currentCommentPin.y, newComment.id);
+                createPin(currentCommentPin.x, currentCommentPin.y, newComment.id);
             }
             
             localStorage.setItem('comments', JSON.stringify(comments));
@@ -1230,16 +1219,33 @@
             commentsList.innerHTML = comments.map(comment => `
                 <div class="comment">
                     <div class="comment-meta">
-                        <strong>${comment.name}</strong> • ${comment.version} • ${new Date(comment.created).toLocaleDateString()}
+                        ${comment.version} • ${new Date(comment.created).toLocaleDateString()}
                         ${comment.updated ? `• Updated: ${new Date(comment.updated).toLocaleDateString()}` : ''}
                     </div>
                     <div>${comment.text}</div>
                     <div class="comment-actions">
                         <button onclick="jumpToComment('${comment.id}')" style="background: #3b82f6; color: white;">Jump to Pin</button>
                         <button onclick="openCommentModal('${comment.id}')" style="background: #6b7280; color: white;">Edit</button>
+                        <button onclick="deleteCommentFromList('${comment.id}')" style="background: #ef4444; color: white;">Delete</button>
                     </div>
                 </div>
             `).join('');
+        }
+
+        function deleteCommentFromList(commentId) {
+            if (confirm('Are you sure you want to delete this comment?')) {
+                const comments = JSON.parse(localStorage.getItem('comments') || '[]');
+                const filteredComments = comments.filter(c => c.id !== commentId);
+                localStorage.setItem('comments', JSON.stringify(filteredComments));
+                
+                // Remove pin
+                const pin = document.querySelector(`[data-comment-id="${commentId}"]`);
+                if (pin) {
+                    pin.remove();
+                }
+                
+                loadComments();
+            }
         }
 
         function filterComments() {
