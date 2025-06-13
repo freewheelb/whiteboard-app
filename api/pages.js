@@ -1,4 +1,4 @@
-// api/pages.js
+// api/pages.js - Updated to include page_url field
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
     }
 
     if (method === 'POST') {
-      const { clientName, pageName, version, password, imageData } = req.body;
+      const { clientName, pageName, version, pageUrl, password, imageData } = req.body;
       
       if (!clientName || !pageName || !version || !imageData) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -64,8 +64,8 @@ module.exports = async (req, res) => {
 
       try {
         const result = await pool.query(
-          'INSERT INTO pages (client_id, name, version, password_hash, image_data) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-          [clientId, pageName, version, passwordHash, imageData]
+          'INSERT INTO pages (client_id, name, version, page_url, password_hash, image_data) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+          [clientId, pageName, version, pageUrl || null, passwordHash, imageData]
         );
         return res.status(201).json(result.rows[0]);
       } catch (error) {
