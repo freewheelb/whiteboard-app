@@ -196,7 +196,7 @@ async function previewScreenshot() {
     try {
         showLoading('Taking screenshot...');
         
-        const response = await fetch(`${CONFIG.apiUrl}/screenshot-test`, {
+        const response = await fetch(`${CONFIG.apiUrl}/screenshot`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -219,13 +219,29 @@ async function previewScreenshot() {
             const previewImg = document.getElementById('screenshot-preview-img');
             
             if (previewContainer && previewImg) {
-                previewImg.src = result.imageData;
-                previewContainer.style.display = 'block';
-                
-                // Store the screenshot data for upload
-                window.selectedScreenshot = result.imageData;
-                
-                console.log('Screenshot preview loaded:', result.size);
+                // Check if we got actual image data or just a test response
+                if (result.imageData) {
+                    previewImg.src = result.imageData;
+                    previewContainer.style.display = 'block';
+                    
+                    // Store the screenshot data for upload
+                    window.selectedScreenshot = result.imageData;
+                    
+                    console.log('Screenshot preview loaded:', result.size);
+                } else if (result.message) {
+                    // Test API response - show success message instead of image
+                    previewContainer.innerHTML = `
+                        <div style="padding: 20px; background: #f0fdf4; border: 1px solid #10b981; border-radius: 8px; color: #059669;">
+                            <p><strong>✅ Test Successful!</strong></p>
+                            <p>${result.message}</p>
+                            <p><strong>Original URL:</strong> ${result.originalUrl}</p>
+                            <p><strong>Cleaned URL:</strong> ${result.cleanedUrl}</p>
+                            <p><em>${result.note}</em></p>
+                        </div>
+                    `;
+                    previewContainer.style.display = 'block';
+                    window.selectedScreenshot = null; // No actual screenshot data
+                }
             }
         } else {
             const error = await response.json();
