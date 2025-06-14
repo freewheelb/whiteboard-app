@@ -1,7 +1,7 @@
 {
   "name": "whiteboard-api",
   "version": "1.0.0",
-  "description": "Backend API for whiteboard feedback system",
+  "description": "Backend API for whiteboard feedback system with screenshot capabilities",
   "main": "api/index.js",
   "scripts": {
     "start": "node api/index.js",
@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "pg": "^8.11.3",
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^2.4.3",
+    "playwright-aws-lambda": "^0.12.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
