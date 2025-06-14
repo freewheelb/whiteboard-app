@@ -29,13 +29,29 @@ body {
     align-items: center;
 }
 
-.header-content h1 {
+.header-content {
+    display: flex;
+    align-items: center;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-logo {
+    height: 50px;
+    width: auto;
+}
+
+.header-text h1 {
     color: #1e293b;
     margin-bottom: 8px;
     font-size: 28px;
 }
 
-.header-content p {
+.header-text p {
     color: #64748b;
     font-size: 16px;
 }
