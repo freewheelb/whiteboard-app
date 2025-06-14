@@ -11,7 +11,7 @@ let currentSourceTab = 'upload';
 
 // Configuration
 const CONFIG = {
-    apiUrl: 'https://your-api-url.vercel.app/api', // Replace with your actual API URL
+    apiUrl: 'https://whiteboard-app-omega.vercel.app/api', // Your actual API URL
     maxFileSize: 5 * 1024 * 1024, // 5MB
     adminPassword: 'maven' // Consider moving to environment variable
 };
