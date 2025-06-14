@@ -1,5 +1,6 @@
-// api/screenshot.js - Screenshot API endpoint for Vercel
-const playwright = require('playwright-aws-lambda');
+// api/screenshot.js - Using Puppeteer + Chromium for Vercel
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,6 +37,11 @@ module.exports = async (req, res) => {
       console.log('Cleaned Squarespace URL:', cleanUrl);
     }
 
+    // Add protocol if missing
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
+
     // Validate URL
     try {
       new URL(cleanUrl);
@@ -45,86 +51,88 @@ module.exports = async (req, res) => {
 
     console.log('Taking screenshot of:', cleanUrl);
 
+    // Configure Chromium for serverless
+    const chromeArgs = [
+      ...chromium.args,
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+      '--disable-gpu'
+    ];
+
     // Launch browser
-    browser = await playwright.launchChromium({ 
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--window-size=1920x1080',
-        '--disable-features=VizDisplayCompositor'
-      ]
+    browser = await puppeteer.launch({
+      args: chromeArgs,
+      defaultViewport: viewport || { width: 1920, height: 1080 },
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true
     });
 
-    const context = await browser.newContext({
-      viewport: viewport || { width: 1920, height: 1080 },
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    });
+    const page = await browser.newPage();
 
-    const page = await context.newPage();
+    // Set user agent
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
 
-    // Navigate to the page first
+    // Navigate to the page
     console.log('Navigating to URL...');
-    await page.goto(cleanUrl, { 
-      waitUntil: 'domcontentloaded',
-      timeout: 30000 
-    });
+    try {
+      await page.goto(cleanUrl, { 
+        waitUntil: 'networkidle0',
+        timeout: 30000 
+      });
+    } catch (navError) {
+      console.warn('Navigation warning:', navError.message);
+      // Try with domcontentloaded instead
+      await page.goto(cleanUrl, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 30000 
+      });
+    }
 
-    // Check for Squarespace password protection
-    const hasPasswordForm = await page.$('.password-page, input[name="password"], #passwordField');
+    // Check for password protection
+    await page.waitForTimeout(2000);
+    
+    const hasPasswordForm = await page.evaluate(() => {
+      const selectors = [
+        '.password-page',
+        'input[name="password"]',
+        '#passwordField',
+        'input[type="password"]'
+      ];
+      return selectors.some(selector => document.querySelector(selector));
+    });
     
     if (hasPasswordForm && password) {
       console.log('Found password form, attempting to authenticate...');
       
       try {
-        // Try different Squarespace password field selectors
-        const passwordSelectors = [
-          'input[name="password"]',
-          '#passwordField',
-          'input[type="password"]',
-          '.password-input'
-        ];
-        
-        let passwordField = null;
-        for (const selector of passwordSelectors) {
-          passwordField = await page.$(selector);
-          if (passwordField) break;
-        }
-        
+        // Find and fill password field
+        const passwordField = await page.$('input[name="password"], #passwordField, input[type="password"]');
         if (passwordField) {
-          await passwordField.fill(password);
+          await passwordField.type(password);
           
-          // Look for submit button
-          const submitSelectors = [
-            'button[type="submit"]',
-            'input[type="submit"]',
-            '.password-submit',
-            'button:has-text("Enter")',
-            'button:has-text("Submit")'
-          ];
-          
-          let submitButton = null;
-          for (const selector of submitSelectors) {
-            submitButton = await page.$(selector);
-            if (submitButton) break;
-          }
-          
+          // Try to submit
+          const submitButton = await page.$('button[type="submit"], input[type="submit"], .password-submit');
           if (submitButton) {
-            await submitButton.click();
-            // Wait for navigation after password submission
-            await page.waitForLoadState('networkidle', { timeout: 10000 });
+            await Promise.all([
+              page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 10000 }).catch(() => {}),
+              submitButton.click()
+            ]);
           } else {
-            // Try pressing Enter on password field
-            await passwordField.press('Enter');
-            await page.waitForLoadState('networkidle', { timeout: 10000 });
+            await Promise.all([
+              page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 10000 }).catch(() => {}),
+              passwordField.press('Enter')
+            ]);
           }
+          await page.waitForTimeout(3000);
         }
       } catch (authError) {
         console.warn('Password authentication failed:', authError.message);
-        // Continue anyway - might still get some content
       }
     } else if (hasPasswordForm && !password) {
       return res.status(401).json({ 
@@ -133,68 +141,53 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Wait for page to load and remove blocking elements
-    await page.waitForTimeout(3000);
-
-    // Remove common blocking elements and improve screenshot quality
+    // Remove blocking elements
     await page.addStyleTag({
       content: `
-        /* Hide common cookie banners and popups */
-        [class*="cookie" i]:not([class*="cookie-policy" i]), 
-        [id*="cookie" i]:not([id*="cookie-policy" i]), 
+        /* Hide common blocking elements */
+        [class*="cookie" i]:not([class*="policy" i]), 
+        [id*="cookie" i]:not([id*="policy" i]),
         [class*="gdpr" i], [id*="gdpr" i],
         [class*="popup" i], [id*="popup" i],
-        [class*="modal" i]:not(.whiteboard-modal), 
-        [id*="modal" i]:not(#whiteboard-modal),
-        [class*="overlay" i]:not(.whiteboard-overlay), 
-        [id*="overlay" i]:not(#whiteboard-overlay),
+        [class*="modal" i]:not(.whiteboard-modal),
+        [class*="overlay" i]:not(.whiteboard-overlay),
         .sqs-modal-lightbox,
         .password-page,
-        #siteWrapper.password-protected-page,
-        .sqs-announcement-bar {
-          display: none !important;
-        }
-        
-        /* Hide ads */
-        [class*="ad" i]:not([class*="head" i]):not([class*="read" i]), 
-        [id*="ad" i]:not([id*="head" i]):not([id*="read" i]),
-        [class*="advertisement" i],
+        .sqs-announcement-bar,
+        [class*="ad" i]:not([class*="head" i]):not([class*="read" i]),
         iframe[src*="doubleclick"],
-        iframe[src*="googlesyndication"],
-        .google-ad,
-        .adsense {
+        iframe[src*="googlesyndication"] {
           display: none !important;
         }
         
-        /* Improve text rendering */
-        * {
+        /* Improve rendering */
+        *, *::before, *::after {
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
         }
         
-        /* Ensure page is fully visible */
         body, html {
           overflow-x: visible !important;
         }
       `
     });
 
-    // Additional wait for dynamic content
-    await page.waitForTimeout(2000);
+    // Wait for content to stabilize
+    await page.waitForTimeout(3000);
 
     // Take screenshot
     console.log('Capturing screenshot...');
     const screenshot = await page.screenshot({ 
       type: 'png',
       fullPage: fullPage,
-      quality: 90,
-      animations: 'disabled'
+      quality: 90
     });
 
-    // Convert to base64 for database storage
+    // Convert to base64
     const base64Screenshot = `data:image/png;base64,${screenshot.toString('base64')}`;
-
-    console.log('Screenshot captured successfully, size:', (base64Screenshot.length / 1024 / 1024).toFixed(2), 'MB');
+    const sizeKB = Math.round(base64Screenshot.length / 1024);
+    
+    console.log('Screenshot captured successfully, size:', sizeKB, 'KB');
 
     res.status(200).json({ 
       success: true,
@@ -202,15 +195,14 @@ module.exports = async (req, res) => {
       originalUrl: url,
       cleanedUrl: cleanUrl,
       timestamp: new Date().toISOString(),
-      size: Math.round(base64Screenshot.length / 1024) + ' KB'
+      size: sizeKB + ' KB'
     });
 
   } catch (error) {
     console.error('Screenshot error:', error);
     res.status(500).json({ 
       error: 'Failed to capture screenshot', 
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: error.message
     });
   } finally {
     if (browser) {
