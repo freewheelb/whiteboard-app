@@ -196,7 +196,7 @@ async function previewScreenshot() {
     try {
         showLoading('Taking screenshot...');
         
-        const response = await fetch(`${CONFIG.apiUrl}/screenshot`, {
+        const response = await fetch(`${CONFIG.apiUrl}/screenshot-test`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
