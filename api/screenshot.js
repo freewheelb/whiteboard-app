@@ -51,7 +51,8 @@ module.exports = async (req, res) => {
 
     console.log('Taking screenshot of:', cleanUrl);
 
-    // Configure Chromium for serverless
+    // Configure Chromium for serverless with more debugging
+    console.log('Configuring browser...');
     const chromeArgs = [
       ...chromium.args,
       '--no-sandbox',
@@ -61,9 +62,12 @@ module.exports = async (req, res) => {
       '--no-first-run',
       '--no-zygote',
       '--single-process',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--disable-web-security',
+      '--disable-features=VizDisplayCompositor'
     ];
 
+    console.log('Launching browser...');
     // Launch browser
     browser = await puppeteer.launch({
       args: chromeArgs,
@@ -73,25 +77,29 @@ module.exports = async (req, res) => {
       ignoreHTTPSErrors: true
     });
 
+    console.log('Browser launched, creating new page...');
     const page = await browser.newPage();
 
     // Set user agent
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
 
     // Navigate to the page
-    console.log('Navigating to URL...');
+    console.log('Navigating to URL:', cleanUrl);
     try {
       await page.goto(cleanUrl, { 
         waitUntil: 'networkidle0',
-        timeout: 30000 
+        timeout: 25000 
       });
+      console.log('Navigation successful with networkidle0');
     } catch (navError) {
-      console.warn('Navigation warning:', navError.message);
+      console.warn('Navigation with networkidle0 failed:', navError.message);
+      console.log('Retrying with domcontentloaded...');
       // Try with domcontentloaded instead
       await page.goto(cleanUrl, { 
         waitUntil: 'domcontentloaded',
-        timeout: 30000 
+        timeout: 25000 
       });
+      console.log('Navigation successful with domcontentloaded');
     }
 
     // Check for password protection
@@ -199,10 +207,32 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Screenshot error:', error);
+    console.error('Screenshot error details:', {
+      message: error.message,
+      stack: error.stack,
+      url: cleanUrl || url,
+      timestamp: new Date().toISOString()
+    });
+    
+    let userMessage = 'Failed to capture screenshot';
+    
+    // Provide more specific error messages
+    if (error.message.includes('timeout')) {
+      userMessage = 'Website took too long to load (timeout)';
+    } else if (error.message.includes('net::ERR_NAME_NOT_RESOLVED')) {
+      userMessage = 'Website not found - please check the URL';
+    } else if (error.message.includes('net::ERR_CONNECTION_REFUSED')) {
+      userMessage = 'Website refused connection - may be down';
+    } else if (error.message.includes('Navigation failed')) {
+      userMessage = 'Could not navigate to website - please check URL';
+    } else if (error.message.includes('Protocol error')) {
+      userMessage = 'Browser connection error - please try again';
+    }
+    
     res.status(500).json({ 
-      error: 'Failed to capture screenshot', 
-      details: error.message
+      error: userMessage,
+      details: error.message,
+      url: cleanUrl || url
     });
   } finally {
     if (browser) {
