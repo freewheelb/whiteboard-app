@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "pg": "^8.11.3",
-    "bcryptjs": "^2.4.3",
     "@sparticuz/chromium": "^121.0.0",
     "puppeteer-core": "^21.9.0"
   },
