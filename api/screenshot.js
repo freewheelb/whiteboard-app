@@ -30,16 +30,16 @@ module.exports = async (req, res) => {
     // Clean and validate URL - special handling for Squarespace
     let cleanUrl = url.trim();
     
+    // Add https:// if no protocol specified
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
+    
     // Handle Squarespace URLs - remove everything after .squarespace.com
     const squarespaceMatch = cleanUrl.match(/(https?:\/\/[^\/]+\.squarespace\.com)/);
     if (squarespaceMatch) {
       cleanUrl = squarespaceMatch[1];
       console.log('Cleaned Squarespace URL:', cleanUrl);
-    }
-
-    // Add protocol if missing
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      cleanUrl = 'https://' + cleanUrl;
     }
 
     // Validate URL
